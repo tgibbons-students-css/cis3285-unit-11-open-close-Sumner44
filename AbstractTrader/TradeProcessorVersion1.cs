@@ -2,14 +2,40 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+using VirtualTrader;
 
 namespace AbstractTrader
 {
-    public class TradeProcessorVersion1 : TradeProcessor
+    public class TradeProcessorVersion1 
     {
+        // Implementing the LogMessage method
+        protected void LogMessage(string message, params object[] args)
+        {
+            Console.WriteLine(message, args);
+            // added for Request 408
+            using (StreamWriter logfile = File.AppendText("log.xml"))
+            {
+                logfile.WriteLine("<log>" + string.Format(message, args) + "</log>");
+            }
+        }
+
+        // The ProcessTrades method, which processes a stream of trade data
+        public virtual void ProcessTrades(Stream stream)
+        {
+            LogMessage("INFO: Starting trade processing.");
+
+            // Step 1: Read trade data from the stream
+            var lines = ReadTradeData(stream);
+
+            // Step 2: Parse the trade data into trade records
+            var trades = ParseTrades(lines);
+
+            // Step 3: Store the parsed trades (simulated here, would usually be saved to a database)
+            StoreTrades(trades);
+
+            LogMessage("INFO: Trade processing completed.");
+        }
+
         protected override IEnumerable<string> ReadTradeData(Stream stream)
         {
             LogMessage("INFO: ReadTradeData version 1");
@@ -22,6 +48,7 @@ namespace AbstractTrader
                     tradeData.Add(line);
                 }
             }
+            LogMessage("INFO: {0} lines of trade data read", tradeData.Count);
             return tradeData;
         }
 
@@ -40,7 +67,7 @@ namespace AbstractTrader
 
                 lineCount++;
             }
-
+            LogMessage("INFO: {0} trades parsed", trades.Count);
             return trades;
         }
 
@@ -69,5 +96,9 @@ namespace AbstractTrader
             LogMessage("INFO: {0} trades processed", trades.Count());
         }
 
+        public void ProcessTrades(FileStream stream)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
